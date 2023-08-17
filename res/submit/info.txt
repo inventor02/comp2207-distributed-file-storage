@@ -1,0 +1,15 @@
+-----------------------------------------------
+   COMP2207 Distributed File Storage System
+-----------------------------------------------
+
+This automatically generated information file contains data about the submission archive itself,
+for traceability purposes. It can be ignored.
+
+Author: George Peppard <gjp1g21@soton.ac.uk>
+Archived on: @DATE@ at @TIME@
+
+Environment: @ANTVER@
+             @OSNAME@ (@OSARCH@) @OSVER@
+             @JVMNAME@ @JVMVERSION@
+             @JREVENDOR@ Java Runtime Environment @JREVERSION@
+User       : @USERNAME@

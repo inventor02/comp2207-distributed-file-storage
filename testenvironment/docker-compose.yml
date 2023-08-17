@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  dsnbox:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ../build:/dfsystem
+    ports:
+      - '22'

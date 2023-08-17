@@ -1,0 +1,5 @@
+downloads/
+to_store/
+*.class
+*.log
+!client.jar

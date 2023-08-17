@@ -1,0 +1,130 @@
+<project name="distributed-file-system" basedir="." default="compile">
+  <property name="src.dir"     value="src"/>
+  <property name="lib.dir"     value="lib"/>
+  <property name="res.dir"     value="res"/>
+  <dirname  property="dir"     file="${ant.file}"/>
+
+  <property name="build.dir"   value="build"/>
+  <property name="classes.dir" value="${build.dir}/classes"/>
+  <property name="runtime.dir" value="${build.dir}/run"/>
+
+  <property name="main-class.controller"  value="Controller"/>
+  <property name="main-class.dstore"      value="Dstore"/>
+
+  <property name="client.classes-dir" value="${build.dir}/classes-client"/>
+  <property name="client.dir"         value="client"/>
+  <property name="client.main-class"  value="ClientMain"/>
+  <property name="client.jar-name"    value="client.jar"/>
+  <property name="client.working-dir" value="${runtime.dir}/client"/>
+
+  <property name="cp.client"   value="${lib.dir}/client.jar:${client.classes-dir}"/>
+
+  <property name="controller.port" value="8001"/>
+  <property name="controller.rep-factor" value="3"/>
+  <property name="controller.timeout" value="10000"/>
+  <property name="controller.rebalance-period" value="60000"/>
+
+  <property name="dstore.port" value="8002"/>
+  <property name="dstore.timeout" value="10000"/>
+  <property name="dstore.storage-dir" value="build/files"/>
+
+  <property name="submit.res.dir" value="${res.dir}/submit"/>
+  <property name="submit.work.dir" value="${build.dir}/submission"/>
+  <property name="submit.zip.name" value="submission.zip"/>
+  <property name="submit.zip.path" value="${build.dir}/${submit.zip.name}"/>
+
+  <property name="validation.work.dir" value="${build.dir}/validation"/>
+  <property name="validation.res.dir" value="${res.dir}/local-validation"/>
+  <property name="validation.script" value="validate_submission.sh"/>
+  <property name="validation.script.path" value="${validation.work.dir}/${validation.script}"/>
+  <property name="validation.wait" value="5"/>
+
+  <property name="javadoc.dir" value="${build.dir}/javadoc"/>
+
+  <tstamp>
+    <format property="date.formatted" pattern="dd/MM/yyyy"/>
+    <format property="time.formatted" pattern="HH:mm:ss z"/>
+  </tstamp>
+
+  <target name="clean">
+    <delete dir="${build.dir}"/>
+  </target>
+
+  <target name="compile">
+    <mkdir dir="${classes.dir}"/>
+    <javac srcdir="${src.dir}" destdir="${classes.dir}" includeantruntime="false"/>
+  </target>
+
+  <target name="compile-client">
+    <mkdir dir="${client.classes-dir}"/>
+    <javac srcdir="${client.dir}" destdir="${client.classes-dir}" classpath="${lib.dir}/client.jar"/>
+  </target>
+
+  <target name="client" depends="compile-client">
+    <property name="client.class" value="${client.main-class}"/>
+    <mkdir dir="${client.working-dir}"/>
+    <copy todir="${client.working-dir}">
+      <fileset dir="${res.dir}/test-files"/>
+    </copy>
+    <java classname="${client.class}" classpath="${cp.client}" fork="yes" dir="${client.working-dir}"/>
+  </target>
+
+  <target name="controller" depends="compile">
+    <java classname="${main-class.controller}" classpath="${classes.dir}" fork="true">
+      <arg value="${controller.port}"/>
+      <arg value="${controller.rep-factor}"/>
+      <arg value="${controller.timeout}"/>
+      <arg value="${controller.rebalance-period}"/>
+    </java>
+  </target>
+
+  <target name="dstore" depends="compile">
+    <java classname="${main-class.dstore}" classpath="${classes.dir}" fork="true">
+      <arg value="${dstore.port}"/>
+      <arg value="${controller.port}"/>
+      <arg value="${dstore.timeout}"/>
+      <arg value="${dstore.storage-dir}"/>
+    </java>
+  </target>
+
+  <target name="submit" depends="clean,compile">
+    <mkdir dir="${submit.work.dir}"/>
+    <copy todir="${submit.work.dir}">
+      <fileset dir="${src.dir}" includes="*.java"/>
+      <fileset dir="${submit.res.dir}"/>
+      <filterset>
+        <filter token="DATE" value="${date.formatted}"/>
+        <filter token="TIME" value="${time.formatted}"/>
+        <filter token="ANTVER" value="${ant.version}"/>
+        <filter token="OSNAME" value="${os.name}"/>
+        <filter token="OSARCH" value="${os.arch}"/>
+        <filter token="OSVER" value="${os.version}"/>
+        <filter token="JVMNAME" value="${java.vm.vendor} ${java.vm.name}"/>
+        <filter token="JVMVERSION" value="${java.vm.version}"/>
+        <filter token="JREVENDOR" value="${java.vendor}"/>
+        <filter token="JREVERSION" value="${java.version}"/>
+        <filter token="USERNAME" value="${user.name}"/>
+      </filterset>
+    </copy>
+    <zip basedir="${submit.work.dir}" destfile="${submit.zip.path}"/>
+  </target>
+
+  <target name="validate" depends="submit">
+    <mkdir dir="${validation.work.dir}"/>
+    <copy todir="${validation.work.dir}">
+      <fileset dir="${validation.res.dir}"/>
+      <file file="${submit.zip.path}"/>
+    </copy>
+    <exec dir="${validation.work.dir}" executable="sh" osfamily="unix" inputstring="y">
+      <arg value="${dir}/${validation.script.path}"/>
+      <arg value="${submit.zip.name}"/>
+      <arg value="${validation.wait}"/>
+    </exec>
+  </target>
+
+  <target name="javadoc">
+    <javadoc destdir="${javadoc.dir}" private="true" access="private" windowtitle="Distributed File System">
+      <fileset dir="${src.dir}" includes="*.java"/>
+    </javadoc>
+  </target>
+</project>
